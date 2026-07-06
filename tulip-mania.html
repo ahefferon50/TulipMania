@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>De Windhandel — A Tulip Mania Trading Simulation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EBE0C2;
+    --paper-dark:#DBCB9E;
+    --paper-shadow:#c9b880;
+    --ink:#2b2015;
+    --ink-soft:#4a3c2a;
+    --delft:#2b4c6f;
+    --wine:#7c2331;
+    --gold:#a8792a;
+    --green:#445939;
+    --rule:#b7a06a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.15), transparent 60%),
+      linear-gradient(180deg, var(--paper) 0%, var(--paper-dark) 100%);
+    color:var(--ink);
+    font-family:'EB Garamond', serif;
+    min-height:100vh;
+    padding:22px 14px 60px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header{
+    text-align:center;
+    padding:18px 10px 22px;
+    border-bottom:3px double var(--ink-soft);
+    margin-bottom:20px;
+    position:relative;
+  }
+  header h1{
+    font-family:'IM Fell English SC', serif;
+    font-size:clamp(28px,5vw,44px);
+    letter-spacing:1px;
+    margin:0 0 4px;
+    color:var(--ink);
+  }
+  header .sub{
+    font-style:italic;
+    color:var(--ink-soft);
+    font-size:16px;
+    margin:0;
+  }
+  .stamp{
+    position:absolute; top:8px; right:8px;
+    width:64px;height:64px;
+    border:2px solid var(--wine);
+    border-radius:50%;
+    color:var(--wine);
+    display:flex;align-items:center;justify-content:center;
+    text-align:center;
+    font-family:'IM Fell English SC',serif;
+    font-size:10px;
+    line-height:1.1;
+    transform:rotate(-9deg);
+    opacity:0.75;
+    letter-spacing:0.5px;
+  }
+
+  /* ---------- Intro screen ---------- */
+  .intro-card{
+    background:rgba(255,251,238,0.55);
+    border:1px solid var(--rule);
+    padding:28px 30px;
+    border-radius:2px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  }
+  .intro-card h2{
+    font-family:'IM Fell English SC',serif;
+    color:var(--wine);
+    font-size:22px;
+    margin-top:0;
+  }
+  .intro-card p{line-height:1.65;font-size:16.5px;}
+  .intro-card ul{line-height:1.7;font-size:16px;}
+  .begin-row{text-align:center;margin-top:26px;}
+
+  button{
+    font-family:'EB Garamond',serif;
+    font-weight:600;
+    cursor:pointer;
+    border:none;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  button:active{transform:translateY(1px);}
+  .btn-primary{
+    background:var(--wine);
+    color:#f4ead0;
+    padding:13px 34px;
+    font-size:18px;
+    letter-spacing:0.5px;
+    border-radius:3px;
+    box-shadow:0 3px 0 #4e131c;
+  }
+  .btn-primary:hover{box-shadow:0 4px 6px rgba(0,0,0,0.25);}
+  .btn-secondary{
+    background:transparent;
+    color:var(--delft);
+    border:1.5px solid var(--delft);
+    padding:8px 16px;
+    font-size:14px;
+    border-radius:3px;
+  }
+  .btn-secondary:hover{background:rgba(43,76,111,0.08);}
+
+  /* ---------- Top status bar ---------- */
+  .status-bar{
+    display:flex; flex-wrap:wrap; gap:14px;
+    justify-content:space-between;
+    align-items:stretch;
+    background:var(--ink);
+    color:var(--paper);
+    padding:14px 20px;
+    border-radius:3px;
+    margin-bottom:18px;
+    font-family:'Courier Prime', monospace;
+  }
+  .status-item{flex:1;min-width:140px;text-align:center;}
+  .status-item .label{
+    font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+    color:#c9b880;display:block;margin-bottom:4px;
+  }
+  .status-item .value{font-size:20px;font-weight:700;}
+  .status-item .value.up{color:#8fbf7a;}
+  .status-item .value.down{color:#d98a8a;}
+
+  /* ---------- Layout grid ---------- */
+  .game-grid{
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    gap:18px;
+    margin-bottom:18px;
+  }
+  @media (max-width:760px){ .game-grid{grid-template-columns:1fr;} }
+
+  .ledger{
+    background:rgba(255,251,238,0.6);
+    border:1px solid var(--rule);
+    border-radius:2px;
+    padding:16px 16px 18px;
+  }
+  .ledger h3{
+    font-family:'IM Fell English SC',serif;
+    font-size:17px;color:var(--ink-soft);
+    margin:0 0 10px;
+    border-bottom:1px dashed var(--rule);
+    padding-bottom:6px;
+  }
+  .holding-row{
+    display:flex;justify-content:space-between;
+    font-family:'Courier Prime',monospace;
+    font-size:13.5px;
+    padding:4px 0;
+    border-bottom:1px dotted #cbb98a;
+  }
+  .holding-row:last-child{border-bottom:none;}
+  .holding-row .qty{color:var(--wine);font-weight:700;}
+
+  /* ---------- Market cards ---------- */
+  .market-board{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+  }
+  @media (max-width:560px){ .market-board{grid-template-columns:1fr;} }
+
+  .card{
+    background:rgba(255,251,238,0.7);
+    border:1px solid var(--rule);
+    border-radius:3px;
+    padding:14px;
+    position:relative;
+  }
+  .card-head{display:flex;gap:10px;align-items:center;margin-bottom:6px;}
+  .card-head svg{flex-shrink:0;}
+  .card-title{font-family:'IM Fell English SC',serif;font-size:16px;color:var(--ink);}
+  .card-tagline{font-size:12px;font-style:italic;color:var(--ink-soft);margin-top:1px;}
+  .card-price{
+    font-family:'Courier Prime',monospace;
+    font-size:22px;font-weight:700;color:var(--wine);
+    margin:6px 0 2px;
+  }
+  .card-price .delta{font-size:12px;margin-left:6px;font-weight:400;}
+  .delta.up{color:var(--green);}
+  .delta.down{color:var(--wine);}
+  .sparkline{display:block;margin:6px 0;}
+  .card-controls{
+    display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;
+  }
+  .card-controls input{
+    width:52px;font-family:'Courier Prime',monospace;font-size:14px;
+    padding:4px 6px;border:1px solid var(--rule);border-radius:2px;background:#fffdf3;
+  }
+  .mini-btn{
+    padding:6px 12px;font-size:13px;border-radius:2px;
+  }
+  .mini-btn.buy{background:var(--green);color:#f4ead0;}
+  .mini-btn.sell{background:var(--wine);color:#f4ead0;}
+  .mini-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .held-note{font-size:11.5px;color:var(--ink-soft);margin-top:4px;font-family:'Courier Prime',monospace;line-height:1.5;}
+  .trade-label{font-size:12px;letter-spacing:0.3px;color:var(--ink-soft);margin:10px 0 4px;text-transform:uppercase;}
+  .trade-label .margin-note{text-transform:none;font-style:italic;font-weight:400;}
+  .futures-box{margin-top:10px;padding-top:10px;border-top:1px dashed var(--rule);}
+  .mini-btn.future{background:var(--delft);color:#f4ead0;}
+  .card-controls select{
+    font-family:'EB Garamond',serif;font-size:13px;
+    padding:4px 6px;border:1px solid var(--rule);border-radius:2px;background:#fffdf3;
+  }
+  .future-row{color:var(--delft);}
+  .settlement-block{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);}
+  .settlement-line{font-size:14px;line-height:1.5;margin-bottom:4px;color:var(--ink);}
+
+  /* ---------- News / historical panel ---------- */
+  .news-panel{
+    background:#f6efd8;
+    border:1px solid var(--rule);
+    border-left:5px solid var(--delft);
+    border-radius:2px;
+    padding:14px 18px;
+    margin-bottom:18px;
+  }
+  .news-panel .week-label{
+    font-family:'IM Fell English SC',serif;
+    color:var(--delft);font-size:15px;margin-bottom:4px;
+  }
+  .news-panel .event-text{font-size:15.5px;margin:0 0 8px;line-height:1.5;}
+  .news-panel .fact{
+    font-size:14.5px;font-style:italic;color:var(--ink-soft);
+    border-top:1px dashed var(--rule);
+    padding-top:8px;line-height:1.55;
+  }
+  .fact::before{content:"☙ Historical note — "; font-style:normal;color:var(--gold);font-weight:700;}
+
+  .advance-row{text-align:center;margin-top:6px;}
+
+  /* ---------- End screen ---------- */
+  .end-card{
+    background:rgba(255,251,238,0.7);
+    border:1px solid var(--rule);
+    border-radius:2px;
+    padding:26px 28px;
+  }
+  .end-card h2{
+    font-family:'IM Fell English SC',serif;
+    color:var(--wine);text-align:center;font-size:26px;margin-top:0;
+  }
+  .badge{
+    text-align:center;font-family:'IM Fell English SC',serif;
+    font-size:19px;color:var(--gold);margin:6px 0 18px;
+  }
+  .result-figure{
+    text-align:center;font-family:'Courier Prime',monospace;
+    font-size:34px;font-weight:700;margin-bottom:4px;
+  }
+  .result-sub{text-align:center;color:var(--ink-soft);margin-bottom:20px;}
+  .end-card h3{font-family:'IM Fell English SC',serif;color:var(--ink-soft);font-size:17px;margin:20px 0 8px;}
+  .end-card p, .end-card li{line-height:1.65;font-size:16px;}
+  .end-card ol{padding-left:22px;}
+
+  .hidden{display:none !important;}
+  footer.note{
+    text-align:center;color:var(--ink-soft);font-size:12.5px;margin-top:26px;font-style:italic;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="stamp">HAARLEM<br>ANNO<br>1636</div>
+    <h1>De Windhandel</h1>
+    <p class="sub">A Tulip Bulb Speculation, Holland · Winter 1636–1637</p>
+  </header>
+
+  <!-- ================= INTRO ================= -->
+  <div id="intro-screen">
+    <div class="intro-card">
+      <h2>Before you begin</h2>
+      <p>It is late November, 1636. Across the Dutch Republic, tulip bulbs — planted in the ground and invisible until spring — are being bought and sold on promises alone. Weavers, innkeepers, and merchants are turning fortunes trading paper contracts for flowers they will never see. You have <strong>1,000 guilders</strong> (roughly three to six years' wages for a skilled craftsman) to speculate with.</p>
+      <p>Each week you may buy or sell contracts in four real tulip varieties. Prices will rise — dramatically. Somewhere ahead lies February 3rd, 1637. What happens that day is historical fact, not a twist I invented. Your job is to decide when to hold your nerve, and when to get out.</p>
+      <ul>
+        <li>Prices move once per week when you click <em>Advance the Calendar</em>.</li>
+        <li><strong>Buy or sell outright</strong> and you own the bulb — your risk is limited to what you paid.</li>
+        <li><strong>Lock in a futures contract</strong> instead, and you pay only a small deposit now (this is the real historical "wind trade," or windhandel) — but at settlement you owe the <em>full</em> difference between the locked price and the market price, for better or worse. It's a way to control far more tulips than your cash alone allows, at far greater risk. You can put a maximum of 10 bulbs on credit this way per week.</li>
+        <li>On the night of the Haarlem auction — when the room famously fell silent — you can still buy, but you cannot sell. There were simply no buyers.</li>
+        <li>A short historical note appears each week — this bubble is a real, well-documented event.</li>
+        <li>Your goal: end the game with more guilders than you started. Most speculators didn't — and some ended up owing more than they had.</li>
+      </ul>
+      <div class="begin-row">
+        <button class="btn-primary" onclick="beginGame()">Begin Trading</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GAME ================= -->
+  <div id="game-screen" class="hidden">
+
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="label">Date</span>
+        <span class="value" id="stat-date">—</span>
+      </div>
+      <div class="status-item">
+        <span class="label">Cash on hand</span>
+        <span class="value" id="stat-cash">—</span>
+      </div>
+      <div class="status-item">
+        <span class="label">Bulb holdings (value)</span>
+        <span class="value" id="stat-holdings">—</span>
+      </div>
+      <div class="status-item">
+        <span class="label">Net worth</span>
+        <span class="value" id="stat-networth">—</span>
+      </div>
+    </div>
+
+    <div class="game-grid">
+      <div class="ledger">
+        <h3>Your Ledger</h3>
+        <div id="ledger-rows"></div>
+        <h3 style="margin-top:16px;">Open Futures Contracts</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 8px;">Credit used this week: <span id="credit-used">0</span> / <span id="credit-limit">10</span> bulbs</p>
+        <div id="futures-rows"></div>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:12px;line-height:1.5;">
+          For scale: a skilled craftsman in Holland earned roughly 150–350 guilders a year.
+        </p>
+      </div>
+
+      <div class="market-board" id="market-board"></div>
+    </div>
+
+    <div class="news-panel">
+      <div class="week-label" id="news-week">—</div>
+      <p class="event-text" id="news-event">—</p>
+      <p class="fact" id="news-fact">—</p>
+      <div id="news-settlements"></div>
+    </div>
+
+    <div class="advance-row">
+      <button class="btn-primary" id="advance-btn" onclick="advanceWeek()">Advance the Calendar &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ================= END ================= -->
+  <div id="end-screen" class="hidden">
+    <div class="end-card">
+      <h2>The Ledger Closes</h2>
+      <div class="badge" id="end-badge">—</div>
+      <div class="result-figure" id="end-figure">—</div>
+      <div class="result-sub" id="end-sub">—</div>
+
+      <h3>What Really Happened</h3>
+      <p>On February 3rd, 1637, a routine bulb auction in Haarlem drew no bidders at all — buyers simply didn't show. Within days, confidence collapsed across the Dutch Republic and prices for even the finest bulbs fell to a small fraction of their peak. Courts largely refused to enforce the futures contracts that traders had signed, treating many of them more like gambling debts than binding sales. Historian Anne Goldgar's research later found that while individual traders were ruined, there's little evidence the crash caused the widespread bankruptcies or broader economic damage that the popular legend describes — the real story is smaller, and stranger, than the myth.</p>
+
+      <h3>For Discussion</h3>
+      <ol>
+        <li>What made tulip bulbs — rather than, say, bread or timber — the object of this speculative bubble?</li>
+        <li>"Windhandel" trading meant buying and selling a bulb that stayed in the ground, unseen, all winter. How did that distance between the object and the trade encourage risk-taking?</li>
+        <li>Compare this bubble to a more recent one (housing in 2008, dot-com stocks in 2000, a cryptocurrency of your choice). What's the same? What's different?</li>
+        <li>Courts refused to enforce most tulip futures contracts after the crash. Who do you think that decision helped, and who did it hurt?</li>
+      </ol>
+
+      <div class="begin-row">
+        <button class="btn-primary" onclick="beginGame()">Trade Again</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">Prices are dramatized for gameplay but follow the real shape and timeline of the 1636–37 tulip mania.</footer>
+</div>
+
+<script>
+/* ================= DATA ================= */
+
+const VARIETIES = [
+  {
+    id:'switsers', name:'Switsers', tagline:'A common striped bulb, sold by the thousand',
+    petalBase:'#e7ded0', flameColor:null,
+    prices:[5,7,9,13,19,28,42,65,100]
+  },
+  {
+    id:'admiral', name:'Admirael van der Eijck', tagline:'A respected feathered variety',
+    petalBase:'#f4e8d3', flameColor:'#b23a2c',
+    prices:[40,55,75,105,145,205,290,410,580]
+  },
+  {
+    id:'viceroy', name:'Viceroy', tagline:'Once traded for a cart of goods and a silver cup',
+    petalBase:'#eee7f2', flameColor:'#5b3b7a',
+    prices:[180,240,320,430,580,780,1050,1420,1900]
+  },
+  {
+    id:'semper', name:'Semper Augustus', tagline:'The rarest bulb in the Republic — perhaps a dozen exist',
+    petalBase:'#fbf3e6', flameColor:'#8f1f2b',
+    prices:[900,1150,1450,1850,2350,3000,3800,4800,6000]
+  }
+];
+
+const CRASH_FACTOR = { switsers:0.01, admiral:0.02, viceroy:0.03, semper:0.05 };
+const FUTURES_MARGIN = 0.15; // deposit required now as a share of contract value
+
+const WEEK_LABELS = [
+  'Week 1 · Late November, 1636',
+  'Week 2 · Early December, 1636',
+  'Week 3 · Mid-December, 1636',
+  'Week 4 · Late December, 1636',
+  'Week 5 · Early January, 1637',
+  'Week 6 · Mid-January, 1637',
+  'Week 7 · Late January, 1637',
+  'Week 8 · January 30th, 1637',
+  'Week 9 · February 2nd, 1637 — the eve of the Haarlem auction',
+  'February 3rd, 1637 — Haarlem',
+  'February and after, 1637 — the market in ruins'
+];
+
+const EVENTS = [
+  "Tulip merchants gather in tavern back rooms, sketching deals in notaries' ledgers over pipes and beer.",
+  "Word spreads of a weaver in Hoorn who tripled his money in a fortnight. More townsfolk start asking about bulbs.",
+  "A 'college' of traders meets above an inn to set the going rate for the week's most talked-about varieties.",
+  "Prices climb again. A carpenter mortgages his tools to buy into a contract for Viceroy bulbs.",
+  "Bulbs cannot be dug up until summer, so this week's trades are all promises on paper — the wind trade in full swing.",
+  "A buyer in Alkmaar reportedly pays a small fortune for a single Semper Augustus contract. The news travels fast.",
+  "New traders — clerks, maids, glaziers — enter the market for the first time, certain prices can only keep rising.",
+  "The most excited trading yet. Some contracts change hands three times in a single afternoon.",
+  "Everything looks stronger than ever. Buyers are lining up for next week's auction in Haarlem.",
+  "At the Haarlem auction, the room falls silent. For the first time, not a single bid is made.",
+  "Word of the failed auction spreads overnight. Sellers now outnumber buyers by far — and few will pay yesterday's prices."
+];
+
+const FACTS = [
+  "Tulips reached Europe from the Ottoman Empire in the mid-1500s. Botanist Carolus Clusius planted some of the first bulbs in Leiden around 1593.",
+  "The most prized tulips had 'broken' petals — streaks and flames of color. Growers didn't know it at the time, but this was caused by a mosaic virus spread by aphids.",
+  "By the 1630s, tulip bulbs were traded not just by wealthy collectors but by weavers, carpenters, and innkeepers hoping to profit.",
+  "Much of this trading happened informally in taverns, organized by groups called 'colleges,' rather than on the official Amsterdam exchange.",
+  "Because bulbs could only be safely dug up and moved in summer, most winter trading was for 'futures' — promises to deliver a bulb later — a practice called windhandel, or 'wind trade,' since no money or bulbs actually changed hands yet.",
+  "One well-documented account describes a single Viceroy bulb traded for a load of goods — wheat, rye, wine, cheese, a bed, and more — worth roughly 2,500 guilders, several times a skilled craftsman's yearly wage.",
+  "The rarest variety, Semper Augustus, may never have numbered more than a dozen bulbs at the height of the craze, which helped drive its price to legendary heights.",
+  "Since actual bulbs stayed buried and invisible for most of the trading season, brokers relied on hand-painted 'tulip books' — catalogs of watercolor portraits — to show buyers what a variety looked like.",
+  "By this point in the real 1636–37 mania, prices for some common bulb varieties had risen more than twentyfold since November.",
+  "On February 3rd, 1637, a routine bulb auction in Haarlem failed to attract a single bid. Confidence in the market collapsed within days.",
+  "After the crash, courts in Holland largely refused to enforce the futures contracts, ruling that many were closer to gambling debts than binding sales."
+];
+
+/* ================= STATE ================= */
+
+let state = null;
+
+function freshState(){
+  const holdings = {};
+  VARIETIES.forEach(v => holdings[v.id] = 0);
+  return {
+    week:0,
+    cash:1000,
+    holdings,
+    futures:[],
+    nextFutureId:1,
+    futuresBoughtThisWeek:0,
+    settlementMessages:[],
+    history:{ switsers:[], admiral:[], viceroy:[], semper:[] },
+    netWorthHistory:[1000],
+    crashed:false
+  };
+}
+
+const WEEKLY_CREDIT_LIMIT = 10; // max bulbs that can be bought on futures credit per week
+
+function futureOffsets(){
+  const maxOffset = 10 - state.week;
+  return [1,2,3].filter(o=>o<=maxOffset && o>=1);
+}
+
+function noiseFactor(){
+  return 0.94 + Math.random()*0.12; // 0.94 - 1.06
+}
+
+function priceFor(variety, week){
+  const v = VARIETIES.find(x=>x.id===variety);
+  if(week <= 8){
+    return Math.round(v.prices[week] * state._noise[variety][week]);
+  }
+  if(week === 9){
+    // crash trigger week: still at peak, one last chance to sell
+    return Math.round(v.prices[8] * state._noise[variety][8]);
+  }
+  // week 10: crashed hard — the noise range only makes it worse, never better
+  const peak = v.prices[8] * state._noise[variety][8];
+  return Math.max(1, Math.round(peak * CRASH_FACTOR[variety] * (0.55 + Math.random()*0.35)));
+}
+
+/* ================= RENDER ================= */
+
+function fmt(n){ return n.toLocaleString('en-US'); }
+
+function currentHoldingsValue(){
+  let total = 0;
+  VARIETIES.forEach(v=>{
+    total += state.holdings[v.id] * priceFor(v.id, state.week);
+  });
+  return total;
+}
+
+function tulipSVG(v){
+  const flame = v.flameColor;
+  return `
+  <svg width="42" height="52" viewBox="0 0 42 52" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <clipPath id="clip-${v.id}">
+        <path d="M21 4 C10 4 6 16 8 24 C9 29 14 32 14 32 L14 30 C11 26 10 18 15 13 C13 20 15 27 21 30 C27 27 29 20 27 13 C32 18 31 26 28 30 L28 32 C28 32 33 29 34 24 C36 16 32 4 21 4 Z"/>
+      </clipPath>
+    </defs>
+    <path d="M21 4 C10 4 6 16 8 24 C9 29 14 32 14 32 L14 30 C11 26 10 18 15 13 C13 20 15 27 21 30 C27 27 29 20 27 13 C32 18 31 26 28 30 L28 32 C28 32 33 29 34 24 C36 16 32 4 21 4 Z"
+      fill="${v.petalBase}" stroke="#5a4a30" stroke-width="1"/>
+    ${flame ? `
+      <g clip-path="url(#clip-${v.id})" opacity="0.85">
+        <path d="M15 6 C13 14 14 22 17 31" stroke="${flame}" stroke-width="2.4" fill="none"/>
+        <path d="M21 3 C19 13 20 23 22 32" stroke="${flame}" stroke-width="3" fill="none"/>
+        <path d="M27 6 C29 14 28 22 25 31" stroke="${flame}" stroke-width="2.2" fill="none"/>
+      </g>` : ''}
+    <line x1="21" y1="32" x2="21" y2="48" stroke="${'#445939'}" stroke-width="2.5"/>
+    <path d="M21 40 C26 38 30 41 31 45" stroke="#445939" stroke-width="2" fill="none"/>
+  </svg>`;
+}
+
+function sparkline(variety){
+  const hist = state.history[variety];
+  if(hist.length < 2) return '<svg width="140" height="34"></svg>';
+  const max = Math.max(...hist), min = Math.min(...hist);
+  const range = Math.max(1, max-min);
+  const w=140,h=34,pad=3;
+  const pts = hist.map((p,i)=>{
+    const x = pad + (i/(hist.length-1)) * (w-2*pad);
+    const y = h-pad - ((p-min)/range)*(h-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const up = hist[hist.length-1] >= hist[0];
+  return `<svg width="${w}" height="${h}" class="sparkline"><polyline points="${pts}" fill="none" stroke="${up?'#445939':'#7c2331'}" stroke-width="2"/></svg>`;
+}
+
+function renderStatusBar(){
+  const dateLbl = WEEK_LABELS[state.week].split(' · ')[1] || WEEK_LABELS[state.week];
+  document.getElementById('stat-date').textContent = dateLbl;
+  const cashEl = document.getElementById('stat-cash');
+  cashEl.textContent = (state.cash < 0 ? '−' : '') + fmt(Math.abs(state.cash)) + ' fl.' + (state.cash < 0 ? ' (owed)' : '');
+  cashEl.className = 'value ' + (state.cash >= 0 ? 'up' : 'down');
+  const hv = currentHoldingsValue();
+  document.getElementById('stat-holdings').textContent = fmt(hv) + ' fl.';
+  const net = state.cash + hv;
+  const el = document.getElementById('stat-networth');
+  el.textContent = (net < 0 ? '−' : '') + fmt(Math.abs(net)) + ' fl.';
+  el.className = 'value ' + (net >= 1000 ? 'up' : 'down');
+}
+
+function renderLedger(){
+  const rows = VARIETIES.map(v=>{
+    const qty = state.holdings[v.id];
+    if(qty === 0) return '';
+    const val = qty * priceFor(v.id, state.week);
+    return `<div class="holding-row"><span>${v.name}</span><span class="qty">${qty} ×</span><span>${fmt(val)} fl.</span></div>`;
+  }).join('');
+  document.getElementById('ledger-rows').innerHTML = rows || '<p style="font-size:13px;color:var(--ink-soft);">No bulb contracts held.</p>';
+
+  const futRows = state.futures.map(f=>{
+    const vObj = VARIETIES.find(x=>x.id===f.varietyId);
+    const weeksLeft = f.settleWeek - state.week;
+    return `<div class="holding-row future-row"><span>${vObj.name} fut.</span><span class="qty">${f.qty}× @ ${fmt(f.lockedPrice)}</span><span>${weeksLeft} wk left</span></div>`;
+  }).join('');
+  document.getElementById('futures-rows').innerHTML = futRows || '<p style="font-size:12.5px;color:var(--ink-soft);">No open futures contracts.</p>';
+  document.getElementById('credit-used').textContent = state.futuresBoughtThisWeek;
+  document.getElementById('credit-limit').textContent = WEEKLY_CREDIT_LIMIT;
+}
+
+function renderMarket(){
+  const board = document.getElementById('market-board');
+  const offsets = futureOffsets();
+  const creditRemaining = WEEKLY_CREDIT_LIMIT - state.futuresBoughtThisWeek;
+  const auctionNight = state.week === 9;
+  board.innerHTML = VARIETIES.map(v=>{
+    const price = priceFor(v.id, state.week);
+    const hist = state.history[v.id];
+    const prev = hist.length ? hist[hist.length-1] : price;
+    const deltaPct = prev ? Math.round(((price-prev)/prev)*100) : 0;
+    const held = state.holdings[v.id];
+    const affordQty = Math.floor(state.cash/price);
+    const marginPerBulb = Math.max(1, Math.round(price*FUTURES_MARGIN));
+    const sellDisabled = held<1 || state.week>10 || auctionNight;
+    return `
+    <div class="card">
+      <div class="card-head">
+        ${tulipSVG(v)}
+        <div>
+          <div class="card-title">${v.name}</div>
+          <div class="card-tagline">${v.tagline}</div>
+        </div>
+      </div>
+      <div class="card-price">${fmt(price)} fl.
+        ${hist.length ? `<span class="delta ${deltaPct>=0?'up':'down'}">${deltaPct>=0?'▲':'▼'} ${Math.abs(deltaPct)}%</span>` : ''}
+      </div>
+      ${sparkline(v.id)}
+
+      <div class="trade-label">Buy or sell outright</div>
+      <div class="card-controls">
+        <input type="number" min="0" id="qty-${v.id}" value="1" ${state.week>10?'disabled':''}>
+        <button class="mini-btn buy" ${affordQty<1||state.week>10?'disabled':''} onclick="doTrade('${v.id}','buy')">Buy</button>
+        <button class="mini-btn sell" ${sellDisabled?'disabled':''} onclick="doTrade('${v.id}','sell')">Sell</button>
+      </div>
+      <div class="held-note">You hold: ${held} · Can afford: ${affordQty}${auctionNight ? ' · <span style="color:var(--wine);">No bids tonight — selling is frozen</span>' : ''}</div>
+
+      <div class="futures-box">
+        <div class="trade-label">Lock in a futures contract <span class="margin-note">— pay ${Math.round(FUTURES_MARGIN*100)}% now, settle the rest later</span></div>
+        ${offsets.length && creditRemaining>0 ? `
+        <div class="card-controls">
+          <input type="number" min="1" max="${creditRemaining}" id="futqty-${v.id}" value="1">
+          <select id="futweek-${v.id}">
+            ${offsets.map(o=>`<option value="${state.week+o}">settle in ${o} wk${o>1?'s':''}</option>`).join('')}
+          </select>
+          <button class="mini-btn future" onclick="buyFuture('${v.id}')">Lock In</button>
+        </div>
+        <div class="held-note">Margin due now: ${fmt(marginPerBulb)} fl./bulb · you owe the <em>full</em> price difference at settlement, win or lose</div>
+        ` : offsets.length ? `<div class="held-note" style="color:var(--wine);">Weekly credit limit reached — 0 of ${WEEKLY_CREDIT_LIMIT} bulbs left this week.</div>`
+        : `<div class="held-note">Too late in the season to lock in a new contract.</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderNews(){
+  document.getElementById('news-week').textContent = WEEK_LABELS[state.week];
+  document.getElementById('news-event').textContent = EVENTS[state.week];
+  document.getElementById('news-fact').textContent = FACTS[state.week] + (state.week===10 ? ' ' + FACTS[10] : '');
+  const settleEl = document.getElementById('news-settlements');
+  if(state.settlementMessages && state.settlementMessages.length){
+    settleEl.innerHTML = '<div class="settlement-block">' +
+      state.settlementMessages.map(m=>`<div class="settlement-line">⚖ ${m}</div>`).join('') +
+      '</div>';
+  } else {
+    settleEl.innerHTML = '';
+  }
+}
+
+function renderAll(){
+  renderStatusBar();
+  renderLedger();
+  renderMarket();
+  renderNews();
+  const btn = document.getElementById('advance-btn');
+  if(state.week >= 10){
+    btn.textContent = 'See Final Results →';
+    btn.onclick = showEnd;
+  } else if(state.week === 9){
+    btn.textContent = 'Let the Week Play Out →';
+    btn.onclick = advanceWeek;
+  } else {
+    btn.textContent = 'Advance the Calendar →';
+    btn.onclick = advanceWeek;
+  }
+}
+
+/* ================= ACTIONS ================= */
+
+function doTrade(varietyId, action){
+  const price = priceFor(varietyId, state.week);
+  const qtyInput = document.getElementById('qty-'+varietyId);
+  let qty = parseInt(qtyInput.value, 10);
+  if(!qty || qty < 1) return;
+
+  if(action === 'buy'){
+    const maxAfford = Math.floor(state.cash/price);
+    qty = Math.min(qty, maxAfford);
+    if(qty < 1) return;
+    state.cash -= qty*price;
+    state.holdings[varietyId] += qty;
+  } else {
+    qty = Math.min(qty, state.holdings[varietyId]);
+    if(qty < 1) return;
+    state.cash += qty*price;
+    state.holdings[varietyId] -= qty;
+  }
+  renderAll();
+}
+
+function buyFuture(varietyId){
+  const remaining = WEEKLY_CREDIT_LIMIT - state.futuresBoughtThisWeek;
+  if(remaining <= 0) return;
+  const price = priceFor(varietyId, state.week);
+  const qtyInput = document.getElementById('futqty-'+varietyId);
+  const weekSelect = document.getElementById('futweek-'+varietyId);
+  let qty = parseInt(qtyInput.value, 10);
+  const settleWeek = parseInt(weekSelect.value, 10);
+  if(!qty || qty < 1 || !settleWeek) return;
+  qty = Math.min(qty, remaining);
+  const deposit = Math.max(qty, Math.round(price*qty*FUTURES_MARGIN));
+  if(deposit > state.cash) return;
+  state.cash -= deposit;
+  state.futuresBoughtThisWeek += qty;
+  state.futures.push({
+    id: state.nextFutureId++,
+    varietyId, qty,
+    lockedPrice: price,
+    boughtWeek: state.week,
+    settleWeek,
+    deposit
+  });
+  renderAll();
+}
+
+function settleFuturesDue(){
+  state.settlementMessages = [];
+  state.futures = state.futures.filter(f=>{
+    if(f.settleWeek !== state.week) return true;
+    const settlePrice = priceFor(f.varietyId, state.week);
+    const profit = (settlePrice - f.lockedPrice) * f.qty;
+    state.cash += f.deposit + profit;
+    const vObj = VARIETIES.find(x=>x.id===f.varietyId);
+    const verb = profit >= 0 ? 'a profit of' : 'a LOSS of';
+    state.settlementMessages.push(
+      `${vObj.name} futures (${f.qty}×) settled at ${fmt(settlePrice)} fl. against your locked price of ${fmt(f.lockedPrice)} fl. — ${verb} ${fmt(Math.abs(profit))} fl.`
+    );
+    return false;
+  });
+}
+
+function advanceWeek(){
+  // record this week's prices into history before moving on
+  VARIETIES.forEach(v=>{
+    state.history[v.id].push(priceFor(v.id, state.week));
+  });
+  if(state.week === 9) state.crashed = true;
+  state.week = Math.min(10, state.week+1);
+  state.futuresBoughtThisWeek = 0;
+
+  settleFuturesDue();
+
+  // safety net: force-settle anything still open once the game ends
+  if(state.week >= 10 && state.futures.length){
+    state.futures.forEach(f=>{
+      const settlePrice = priceFor(f.varietyId, 10);
+      state.cash += f.deposit + (settlePrice - f.lockedPrice) * f.qty;
+    });
+    state.futures = [];
+  }
+
+  state.netWorthHistory.push(state.cash + currentHoldingsValue());
+  renderAll();
+}
+
+function beginGame(){
+  state = freshState();
+  state._noise = {};
+  VARIETIES.forEach(v=>{
+    state._noise[v.id] = v.prices.map(()=>noiseFactor());
+  });
+  document.getElementById('intro-screen').classList.add('hidden');
+  document.getElementById('end-screen').classList.add('hidden');
+  document.getElementById('game-screen').classList.remove('hidden');
+  renderAll();
+}
+
+function showEnd(){
+  const finalNet = state.cash + currentHoldingsValue();
+  const start = 1000;
+  const pct = Math.round(((finalNet-start)/start)*100);
+
+  document.getElementById('game-screen').classList.add('hidden');
+  document.getElementById('end-screen').classList.remove('hidden');
+
+  let badge;
+  if(finalNet >= start*3) badge = '🏅 “Bought a House on Bulbs”';
+  else if(finalNet >= start*1.3) badge = '🌷 Shrewd Speculator';
+  else if(finalNet >= start*0.7) badge = '📉 Bruised, Not Broken';
+  else if(finalNet >= 0) badge = '🥀 Ruined by the Wind Trade';
+  else badge = '⚖️ In Debt to the Notary';
+
+  document.getElementById('end-badge').textContent = badge;
+  document.getElementById('end-figure').textContent =
+    (finalNet < 0 ? '−' : '') + fmt(Math.abs(finalNet)) + ' guilders';
+  document.getElementById('end-sub').textContent = finalNet < 0
+    ? `You began with 1,000 guilders and finished owing ${fmt(Math.abs(finalNet))} more than you have — futures contracts settled against you after the crash. This is exactly the kind of leveraged loss that ruined real speculators.`
+    : `You began with 1,000 guilders. That's a ${pct>=0?'gain':'loss'} of ${Math.abs(pct)}%.`;
+}
+
+</script>
+</body>
+</html>
